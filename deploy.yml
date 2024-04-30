@@ -20,9 +20,15 @@ spec:
         ports:
         - containerPort: 80
         volumeMounts:
-        - name: nginx-volume-claim
-          mountPath: "/tmp/ola"
+          - name: config
+            mountPath: /usr/share/nginx/html
+            readOnly: true
       volumes:
-      - name: nginx-volume-claim
-        persistentVolumeClaim:
-          claimName: nginx-volume-claim
+      - name: config
+        configMap:
+          name: website-index-file
+          items:
+          - key: index-file
+            path: index.html
+
+#

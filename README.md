@@ -477,6 +477,94 @@ Apply the new manifest file
 
  ![alt text](images/1.19.png)
 
- 
+ Update the deployment file to use the configmap in the volumeMounts section
+
+ apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: config
+            mountPath: /usr/share/nginx/html
+            readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: website-index-file
+          items:
+          - key: index-file
+            path: index.html
+
+Run the command to update the deployment
+
+kubectl apply -f deploy.yml
+
+![alt text](images/1.20.png)
 
 
+Now the index.html file is no longer ephemeral because it is using a configMap that has been mounted onto the filesystem. This is now evident when you exec into the pod and list the /usr/share/nginx/html directory
+
+kubectl get pods
+
+kubectl exec -it nginx-deploy-575877f7fc-hvs6c -- /bin/bash
+
+ls -ltr  /usr/share/nginx/html
+
+![alt text](images/1.21.png)
+![alt text](images/1.22.png)
+
+the index.html is now a soft link to ../data.
+
+Accessing the website will have no immediate impact, as it currently loads the same HTML file from the configuration map. However, if you modify the HTML content within the configuration map and subsequently restart the pod, your changes will be preserved.
+
+You can check the available configuration maps by using either of the following commands
+
+ kubectl get configmap OR $ kubectl get cm
+
+![alt text](images/1.23.png)
+
+
+To modify the ConfigMap, you have two options:
+
+- You can either update the manifest file
+OR
+
+- Directly edit the Kubernetes object. In this case, we'll choose the latter approach.
+To edit the ConfigMap web-index-file using the default system editor, run the following command:
+
+ kubectl edit cm website-index-file
+
+This command will open a text editor, which is typically configured as Vim or your system's default editor. You can now make the desired changes to the content, focusing on modifying only the HTML data section. After making your changes, save the file.
+
+![alt text](images/1.24.png)
+![alt text](images/1.25.png)
+
+
+If you wish to restart the deployment for any reason, simply use the command
+
+ kubectl rollout restart deploy nginx-deploy
+
+This will terminate the running pod and spin up a new one.
+
+![alt text](images/1.26.png)
+
+To delete the cluster
+
+ eksctl delete cluster --name deploy
