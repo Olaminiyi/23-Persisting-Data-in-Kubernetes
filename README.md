@@ -416,3 +416,67 @@ spec:
  Get the loadbalancer endpoint
 
  kubectl get svc
+
+ ![alt text](images/1.16.png)
+
+Access the webpage using the loadBalancer ip address "a91cad30a8d7e46b7a943f9d864e85cb-216923257.us-east-1.elb.amazonaws.com"
+
+![alt text](images/1.17.png)
+
+Connect to the container in the pod and access the /usr/share/nginx/html/index.html
+
+ kubectl exec -it nginx-deploy-575877f7fc-hvs6c -- /bin/bash
+
+ cat /usr/share/nginx/html/index.html
+
+ ![alt text](images/1.18.png)
+ 
+Copy the content to a file.
+
+### Storing Configuration Data Using ConfigMaps
+
+As per the official documentation on ConfigMaps, a ConfigMap is an API resource designed for the storage of non-sensitive data in the form of key-value pairs. ConfigMaps can be utilized by pods to access configuration data through environment variables, command-line arguments, or as configuration files stored in a volume.
+
+For our specific scenario, we will employ a ConfigMap to generate a file within a volume. The corresponding manifest file will appear as follows
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: website-index-file
+data:
+  # file to be mounted inside a volume
+  index-file: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Welcome to nginx!</title>
+    <style>
+    html { color-scheme: light dark; }
+    body { width: 35em; margin: 0 auto;
+    font-family: Tahoma, Verdana, Arial, sans-serif; }
+    </style>
+    </head>
+    <body>
+    <h1>Welcome to nginx!</h1>
+    <p>If you see this page, the nginx web server is successfully installed and
+    working. Further configuration is required.</p>
+
+    <p>For online documentation and support please refer to
+    <a href="http://nginx.org/">nginx.org</a>.<br/>
+    Commercial support is available at
+    <a href="http://nginx.com/">nginx.com</a>.</p>
+
+    <p><em>Thank you for using nginx.</em></p>
+    </body>
+    </html>
+
+
+Apply the new manifest file
+
+ kubectl apply -f nginx-configmap.yml
+
+ ![alt text](images/1.19.png)
+
+ 
+
+
