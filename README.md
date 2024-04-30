@@ -305,6 +305,114 @@ kubectl describe pvc nginx-volume-claim
 
 ![alt text](images/1.14.png)
 
+To proceed, simply apply the new deployment configuration below.
+
+Then configure the Pod spec to use the PVC
 
 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deploy
+  labels:
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-volume-claim
+          mountPath: "/tmp/ola"
+      volumes:
+      - name: nginx-volume-claim
+        persistentVolumeClaim:
+          claimName: nginx-volume-claim
 
+![alt text](images/1.15.png)
+
+Notice that the volumes section now has a persistentVolumeClaim. With the new deployment manifest, the /tmp/ola directory will be persisted, and any data written in there will be stored permanetly on the volume, which can be used by another Pod if the current one gets replaced.
+
+### CONFIGMAP
+
+ConfigMaps are not intended for data storage but rather serve as a means to manage configuration files, safeguarding them against loss during Pod replacement.
+
+To illustrate this, I will utilize the HTML file provided with Nginx, which can be located in the /usr/share/nginx/html/index.html directory.
+
+Let's walk through the following steps to demonstrate a use case for ConfigMaps:
+
+- Remove the volumeMounts and PVC (Persistent Volume Claim) sections from the manifest.
+- Apply the modified configuration using kubectl.
+
+Next, port forward the service to ensure you can access the "Welcome to Nginx" page.
+
+Finally, execute a command to access the running container and create a copy of the index.html file, storing it in a suitable location.
+
+Create a service nginxlb-svc.yml and update deploy.yml with the following data
+
+
+ - for deploy.yml
+
+ apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deploy
+  labels:
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-volume-claim
+          mountPath: "/tmp/ola"
+      volumes:
+      - name: nginx-volume-claim
+        persistentVolumeClaim:
+          claimName: nginx-volume-claim 
+
+- for nginxlb-svc.yml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  type: LoadBalancer
+  selector:
+    tier: frontend
+  ports:
+    - protocol: TCP
+      port: 80 # This is the port the Loadbalancer is listening at
+      targetPort: 80 # This is the port the container is listening at
+
+ kubectl apply -f deploy.yml
+
+ kubectl apply -f nginxlb-svc.yml
+
+ kubectl get pods
+
+ Get the loadbalancer endpoint
+
+ kubectl get svc
